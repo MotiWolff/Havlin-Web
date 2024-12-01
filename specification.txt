@@ -1,0 +1,32 @@
+# specification.txt
+
+HTML Tags Used (10+):
+1. <nav> - Navigation menu
+2. <header> - Page header section
+3. <main> - Main content area
+4. <footer> - Page footer
+5. <article> - Article content in about page
+6. <section> - Content sections
+7. <div> - Content divisions
+8. <h1>, <h2>, <h3> - Headings
+9. <ul>, <li> - Unordered lists and list items
+10. <img> - Images
+11. <button> - Interactive buttons
+12. <p> - Paragraphs
+
+CSS Properties Used (5+):
+1. background-color - Setting background colors
+2. color - Text color
+3. transform - Animations and hover effects
+4. transition - Smooth state changes
+5. box-shadow - Adding depth to elements
+6. margin/padding - Spacing control
+7. font-family - Typography
+
+JavaScript Implementation:
+The site uses JavaScript for interactive features including a welcome message button,
+ fade-in animations for images, and dynamic photo gallery creation with hover effects.
+
+Bootstrap Implementation:
+Bootstrap is integrated for responsive layout and components including the navigation bar,
+ cards, grid system, and buttons. The site uses Bootstrap's container system and responsive breakpoints for mobile-friendly design.

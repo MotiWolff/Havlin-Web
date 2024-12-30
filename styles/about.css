@@ -1,0 +1,134 @@
+/* Timeline RTL Styles */
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    right: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #f0d78c;
+    transform: translateX(50%);
+}
+
+.timeline-item {
+    margin-bottom: 40px;
+    position: relative;
+    width: 100%;
+}
+
+.timeline-icon {
+    position: absolute;
+    right: 50%;
+    transform: translateX(50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #1a1a1a;
+    border: 2px solid #f0d78c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f0d78c;
+    z-index: 1;
+}
+
+.timeline-content {
+    margin-right: 50%;
+    padding-right: 40px;
+    position: relative;
+    width: calc(50% - 40px);
+}
+
+.timeline-item:nth-child(even) .timeline-content {
+    margin-right: 0;
+    margin-left: 50%;
+    padding-right: 0;
+    padding-left: 40px;
+}
+
+/* Timeline content arrow */
+.timeline-content::before {
+    content: '';
+    position: absolute;
+    right: 30px;
+    top: 20px;
+    width: 0;
+    height: 0;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-left: 10px solid #1a1a1a;
+}
+
+.timeline-item:nth-child(even) .timeline-content::before {
+    right: auto;
+    left: 30px;
+    border-left: none;
+    border-right: 10px solid #1a1a1a;
+}
+
+/* Responsive Timeline */
+@media (max-width: 768px) {
+    .timeline::before {
+        right: 40px;
+    }
+
+    .timeline-icon {
+        right: 40px;
+        transform: none;
+    }
+
+    .timeline-content {
+        margin-right: 0;
+        padding-right: 85px;
+        width: 100%;
+    }
+
+    .timeline-item:nth-child(even) .timeline-content {
+        margin-left: 0;
+        padding-left: 85px;
+    }
+
+    .timeline-content::before {
+        right: 75px;
+    }
+
+    .timeline-item:nth-child(even) .timeline-content::before {
+        left: 75px;
+    }
+}
+
+/* Timeline content styling */
+.timeline-content .card {
+    margin: 0;
+    background-color: #1a1a1a;
+}
+
+.timeline-content h3 {
+    color: #f0d78c;
+    margin-bottom: 15px;
+}
+
+.timeline-content .lead {
+    color: #f0d78c;
+    font-weight: bold;
+}
+
+.timeline-content ul {
+    padding-right: 20px;
+    padding-left: 0;
+}
+
+.timeline-content li {
+    margin-bottom: 10px;
+    color: #f0d78c;
+}
+
+.card {
+    background-color: #1a1a1a;
+    text-align: right;
+}

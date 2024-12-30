@@ -1,0 +1,39 @@
+.card {
+    background-color: #1a1a1a;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin-bottom: 25px;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(240, 215, 140, 0.2);
+}
+
+/* Trivia game specific styles */
+#trivia-game {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.list-group-item {
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #f0d78c 0%, #e6c167 100%);
+    border: none;
+    border-radius: 25px;
+    padding: 10px 25px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #ffffff 0%, #f0d78c 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(240, 215, 140, 0.4);
+}

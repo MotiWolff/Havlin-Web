@@ -1,5 +1,4 @@
-// Birthday data organized by Hebrew months
-const birthdays = {
+export const birthdays = {
     'תשרי': [
             { day: 1, name: 'מוישי בייטש' },
             { day: 2, name: 'מוסי בייטש, המבורג' },
@@ -117,26 +116,32 @@ const birthdays = {
         ]
 };
 
-// Function to display birthdays
-function displayBirthdays() {
+export function displayBirthdays() {
     const container = document.getElementById('birthday-list');
     if (!container) return;
 
-    Object.entries(birthdays).forEach(([month, events]) => {
-        events.sort((a, b) => a.day - b.day);
-        
-        container.innerHTML += `
-            <div class="month-section">
-                <h3 class="month-title">${month}</h3>
-                <ul class="birthday-list">
-                    ${events.map(event => `
-                        <li class="birthday-item">
-                            <span class="birthday-day">${event.day}</span>
-                            <span class="birthday-name">${event.name}</span>
-                        </li>
-                    `).join('')}
-                </ul>
-            </div>
-        `;
-    });
+    container.innerHTML = `
+        <div class="birthdays-grid">
+            ${Object.entries(birthdays).map(([month, events]) => {
+                events.sort((a, b) => a.day - b.day);
+                return `
+                    <div class="month-section card">
+                        <div class="card-body">
+                            <div class="month-header">
+                                <span class="month-title">${month}</span>
+                            </div>
+                            <div class="birthday-list">
+                                ${events.map(event => `
+                                    <div class="birthday-item">
+                                        <span class="birthday-day">${event.day}</span>
+                                        <span class="birthday-name">${event.name}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
 }

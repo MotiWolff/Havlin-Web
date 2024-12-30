@@ -4,24 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>הבלין בתמונות - משפחת הבלין</title>
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-    <link href="styles.css" rel="stylesheet">
+    <link href="styles/base.css" rel="stylesheet">
+    <link href="styles/gallery.css" rel="stylesheet">
 </head>
 <body>
+    <script src="js/auth-check.js"></script>
     <!-- Navigation Elements -->
     <button class="menu-toggle">
         <span class="bar"></span>
         <span class="bar"></span>
         <span class="bar"></span>
     </button>
-
+   
     <div class="sidebar-overlay"></div>
 
     <nav class="sidebar">
         <div class="navbar-nav">
-            <a class="nav-link" href="index.html">
+            <a class="nav-link" href="home.html">
                 <i class="fas fa-home"></i>
                 דף הבית
             </a>
@@ -41,9 +44,13 @@
                 <i class="fas fa-calendar-alt"></i>
                 לוח השנה ההבליני
             </a>
-            <a class="nav-link logout-link" href="#" onclick="logout()">
+            <a class="nav-link" href="trivia.html">
+                <i class="fas fa-question-circle"></i>
+                משחק טריוויה
+            </a>
+            <a class="nav-link logout-btn" href="#" id="logoutBtn">
                 <i class="fas fa-sign-out-alt"></i>
-                יציאה
+                יציאה מהאתר
             </a>
         </div>
     </nav>
@@ -59,69 +66,109 @@
                 <!-- Media Categories -->
                 <div class="media-categories mb-4">
                     <div class="row">
-                        <!-- Photos Section -->
+                        <!-- Photos Section with Gallery -->
                         <div class="col-md-6 mb-4">
                             <div class="media-category-card">
                                 <h3 class="category-title">
                                     <i class="fas fa-images"></i>
                                     אלבומי תמונות
                                 </h3>
-                                <div class="category-grid">
-                                    <a href="YOUR_DRIVE_LINK_1" target="_blank" class="category-item">
+                                <div class="category-grid" id="photo-categories">
+                                    <div class="category-item" data-gallery="family-events">
                                         <i class="fas fa-photo-film"></i>
                                         <span>אירועים משפחתיים</span>
-                                    </a>
-                                    <a href="YOUR_DRIVE_LINK_2" target="_blank" class="category-item">
+                                    </div>
+                                    <div class="category-item" data-gallery="historical">
                                         <i class="fas fa-camera-retro"></i>
                                         <span>תמונות היסטוריות</span>
-                                    </a>
-                                    <a href="YOUR_DRIVE_LINK_3" target="_blank" class="category-item">
+                                    </div>
+                                    <div class="category-item" data-gallery="weddings">
                                         <i class="fas fa-ring"></i>
                                         <span>חתונות</span>
-                                    </a>
-                                    <a href="YOUR_DRIVE_LINK_4" target="_blank" class="category-item">
-                                        <i class="fas fa-star-of-david"></i>
-                                        <span>בר מצוות</span>
-                                    </a>
+                                    </div>
+                                    <div class="category-item" data-gallery="misc">
+                                        <i class="fas fa-random"></i>
+                                        <span>שונות</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Videos Section -->
+                        <!-- Documents Section -->
                         <div class="col-md-6 mb-4">
                             <div class="media-category-card">
                                 <h3 class="category-title">
-                                    <i class="fas fa-video"></i>
-                                    סרטים ותיעוד
+                                    <i class="fas fa-file"></i>
+                                    חוברות, קבצים ותיעודים
                                 </h3>
                                 <div class="category-grid">
-                                    <a href="YOUR_DRIVE_LINK_5" target="_blank" class="category-item">
-                                        <i class="fas fa-film"></i>
-                                        <span>סרטי חתונות</span>
+                                    <!-- Direct links -->
+                                    <a href="https://drive.google.com/drive/folders/1UagYzlXKQ6M5hlZmnSxXn4QTbs4TpshY?usp=drive_link" target="_blank" class="category-item direct-link">
+                                        <i class="fas fa-book"></i>
+                                        <span>תשורות</span>
                                     </a>
-                                    <a href="YOUR_DRIVE_LINK_6" target="_blank" class="category-item">
-                                        <i class="fas fa-video"></i>
-                                        <span>אירועים מיוחדים</span>
+                                    <a href="https://drive.google.com/drive/folders/1S67KRneR65ACao_Pibv1J4UJUjdSNbEr?usp=drive_link" target="_blank" class="category-item direct-link">
+                                        <i class="fas fa-gift"></i>
+                                        <span>ספרים לסבא</span>
                                     </a>
-                                    <a href="YOUR_DRIVE_LINK_7" target="_blank" class="category-item">
+                                    <a href="https://drive.google.com/drive/folders/1-YY2ESiyYGPb6J2QkXfroLitzHdLoTar?usp=drive_link" target="_blank" class="category-item direct-link">
                                         <i class="fas fa-microphone"></i>
                                         <span>ראיונות</span>
                                     </a>
-                                    <a href="YOUR_DRIVE_LINK_8" target="_blank" class="category-item">
+                                    <!-- Gallery item -->
+                                    <div class="category-item" data-gallery="family-videos">
                                         <i class="fas fa-play-circle"></i>
                                         <span>סרטים משפחתיים</span>
-                                    </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Featured Photos Preview -->
-                <div class="featured-preview mt-5">
-                    <h3 class="text-center mb-4">תמונות נבחרות</h3>
-                    <div class="preview-grid">
-                        <!-- Add 6-8 preview images here -->
+                <!-- Gallery View -->
+                <div id="gallery-view" class="gallery-fullscreen hidden">
+                    <div class="gallery-header">
+                        <h3 id="gallery-title" class="text-center"></h3>
+                        <button class="close-gallery" onclick="closeGallery()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="gallery-grid">
+                        <!-- Images will be loaded here dynamically -->
+                    </div>
+                </div>
+
+                <!-- Add this viewer for when an image is clicked -->
+                <div id="image-viewer" class="fullscreen-viewer hidden">
+                    <button class="close-viewer">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    
+                    <button class="nav-button prev">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    
+                    <div class="image-container">
+                        <img id="current-image" src="" alt="">
+                    </div>
+                    
+                    <button class="nav-button next">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <!-- Simplified Modal Structure -->
+                <div id="galleryModal" class="gallery-modal">
+                    <div class="modal-content">
+                        <span class="modal-close">&times;</span>
+                        <div class="modal-image-container">
+                            <img id="modalImage" src="" alt="Gallery Image">
+                        </div>
+                        <div class="modal-caption"></div>
+                        <button class="modal-nav prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="modal-nav next"><i class="fas fa-chevron-right"></i></button>
                     </div>
                 </div>
             </div>
@@ -134,14 +181,13 @@
             <p class="created-by">נוצר על ידי מוטי וולף <i class="fas fa-heart text-danger"></i></p>
         </div>
     </footer>
-
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="script.js"></script>
 
     <!-- Add this right after the <body> tag -->
         <audio id="background-music" loop>
-            <source src="niggun.mp3" type="audio/mpeg">
+            <source src="https://www.dropbox.com/scl/fi/l46x0rdb562ynt06odmqw/niggun.mp3?rlkey=yx7hgfa9fyllrmpc4i7892n8v&dl=1" type="audio/mpeg">
             Your browser does not support the audio element.
         </audio>
         
@@ -150,5 +196,6 @@
                 <i class="fas fa-volume-mute"></i>
             </button>
         </div>
+
 </body>
 </html> 

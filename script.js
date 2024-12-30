@@ -1,71 +1,65 @@
-// Login validation
-window.validateLogin = function(event) {
-    event.preventDefault();
-    const password = document.getElementById('password').value;
-    if (password === 'c5012') {
-        localStorage.setItem('isLoggedIn', 'true');
-        window.location.href = 'index.html';
-    } else {
-        alert('סיסמה שגויה');
-    }
-    return false;
-};
-
-// Logout functionality
-window.logout = function() {
-    localStorage.removeItem('isLoggedIn');
-    window.location.href = 'login.html';
-};
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Check if we're on the login page
-    const isLoginPage = window.location.pathname.includes('login.html');
+    console.log('DOM Content Loaded');
     
-    // Only check login status if we're not on the login page
-    if (!isLoginPage && !localStorage.getItem('isLoggedIn')) {
-        window.location.href = 'login.html';
-        return;
+    // קוד לטיפול במוזיקה
+    const musicBtn = document.querySelector('.music-btn');
+    const backgroundMusic = document.getElementById('background-music');
+    
+    if (musicBtn && backgroundMusic) {
+        let isPlaying = false;
+
+        musicBtn.addEventListener('click', function() {
+            if (isPlaying) {
+                backgroundMusic.pause();
+                musicBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                musicBtn.classList.add('muted');
+            } else {
+                backgroundMusic.play().catch(function(error) {
+                    console.log("Error playing audio:", error);
+                });
+                musicBtn.innerHTML = '<i class="fas fa-volume-high"></i>';
+                musicBtn.classList.remove('muted');
+            }
+            isPlaying = !isPlaying;
+        });
     }
 
-    // Audio functionality
-    const audio = document.getElementById('background-music');
-    const musicToggle = document.getElementById('music-toggle');
-    const icon = musicToggle?.querySelector('i');
+    // קוד לטיפול בתפריט הנייד
+    const menuBtn = document.querySelector('.menu-toggle');
+    if (menuBtn) {
+        const nav = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+        
+        if (nav) {
+            menuBtn.addEventListener('click', function() {
+                nav.classList.toggle('active');
+                menuBtn.classList.toggle('active');
+                if (overlay) {
+                    overlay.classList.toggle('active');
+                }
+            });
 
-    musicToggle?.addEventListener('click', function() {
-        if (audio.paused) {
-            audio.play();
-            icon.className = 'fas fa-volume-up';
-            musicToggle.classList.remove('muted');
-        } else {
-            audio.pause();
-            icon.className = 'fas fa-volume-mute';
-            musicToggle.classList.add('muted');
+            if (overlay) {
+                overlay.addEventListener('click', function() {
+                    nav.classList.remove('active');
+                    menuBtn.classList.remove('active');
+                    overlay.classList.remove('active');
+                });
+            }
         }
-    });
-
-    // Sidebar functionality
-    const menuToggle = document.querySelector('.menu-toggle');
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.querySelector('.sidebar-overlay');
-
-    // Toggle sidebar
-    menuToggle?.addEventListener('click', function() {
-        sidebar.classList.toggle('active');
-        overlay.classList.toggle('active');
-        menuToggle.classList.toggle('active');
-    });
-
-    // Close sidebar when clicking overlay
-    overlay?.addEventListener('click', function() {
-        sidebar.classList.remove('active');
-        overlay.classList.remove('active');
-        menuToggle.classList.remove('active');
-    });
-
-    // Display birthdays if we're on the calendar page
-    if (typeof displayBirthdays === 'function') {
-        displayBirthdays();
     }
 });
+
+// טיפול בכפתור התנתקות - מחוץ ל-DOMContentLoaded
+const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('Logout clicked');
+        localStorage.removeItem('isLoggedIn');
+        window.location.replace('/');
+    });
+}
+
+
   

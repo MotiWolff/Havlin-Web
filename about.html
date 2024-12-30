@@ -7,20 +7,23 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-    <link href="styles.css" rel="stylesheet">
+    <link href="styles/base.css" rel="stylesheet">
+    <link href="styles/about.css" rel="stylesheet">
 </head>
 <body>
+    <script src="js/auth-check.js"></script>
     <button class="menu-toggle">
         <span class="bar"></span>
         <span class="bar"></span>
         <span class="bar"></span>
     </button>
     
+    
     <div class="sidebar-overlay"></div>
     
     <nav class="sidebar">
         <div class="navbar-nav">
-            <a class="nav-link" href="index.html">
+            <a class="nav-link" href="home.html">
                 <i class="fas fa-home"></i>
                 דף הבית
             </a>
@@ -40,9 +43,13 @@
                 <i class="fas fa-calendar-alt"></i>
                 לוח השנה ההבליני
             </a>
-            <a class="nav-link logout-link" href="#" onclick="logout()">
+            <a class="nav-link" href="trivia.html">
+                <i class="fas fa-question-circle"></i>
+                משחק טריוויה
+            </a>
+            <a class="nav-link logout-btn" href="#" id="logoutBtn">
                 <i class="fas fa-sign-out-alt"></i>
-                יציאה
+                יציאה מהאתר
             </a>
         </div>
     </nav>
@@ -80,7 +87,7 @@
                         <div class="timeline-content card">
                             <div class="card-body">
                                 <p>
-                                    הרב יוסף יצחק הבלין, ראש מכון היכל מנחם בירושלים, הוא מחשובי רבני חב״ד בארץ הקודש. 
+                                    הרב יוסף יצחק הבלין, רא מכון היכל מנחם בירושלים, הוא מחשובי רבני חב״ד בארץ הקודש. 
                                     פעילותו הענפה כוללת:
                                 </p>
                                 <ul>
@@ -105,7 +112,7 @@
                         <div class="timeline-content card">
                             <div class="card-body">
                                 <div class="achievement-list">
-                                    <p>משפחת הבלין ממשיכה במסורת של הפצת היהדות והחסידות:</p>
+                                    <p>משחת הבלין ממשיכה במסורת של הפצת היהדות והחסידות:</p>
                                     <ul>
                                         <li>מכון היכל מנחם ממשיך להוציא לאור ספרי חסידות ולהפיץ את תורת החסידות</li>
                                         <li>סמינר ״ורד ירושלים״ מכשיר דור חדש של בנות שלוחים</li>
@@ -121,16 +128,17 @@
         </section>
     </main>
 
-    <footer class="text-center mt-4">
-        <p>© 2024 משפחת הבלין. כל הזכויות שמורות</p>
-        <p>Created by Moti Wolff</p>
+    <footer class="text-center mt-4 py-4">
+        <div class="container">
+            <p>© 2024 משפחת הבלין. כל הזכויות שמורות</p>
+            <p class="created-by">נוצר על ידי מוטי וולף <i class="fas fa-heart text-danger"></i></p>
+        </div>
     </footer>
-
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="script.js"></script>
 <audio id="background-music" loop>
-    <source src="niggun.mp3" type="audio/mpeg">
+    <source src="https://www.dropbox.com/scl/fi/l46x0rdb562ynt06odmqw/niggun.mp3?rlkey=yx7hgfa9fyllrmpc4i7892n8v&dl=1" type="audio/mpeg">
     Your browser does not support the audio element.
 </audio>
 

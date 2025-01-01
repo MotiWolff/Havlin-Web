@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function openGallery(category) {
+        document.body.classList.add('gallery-open');
         currentItems = galleryData[category];
         galleryTitle.textContent = document.querySelector(`[data-gallery="${category}"] span`).textContent;
         
@@ -120,10 +121,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // הוספת פונקציית closeGallery
     window.closeGallery = function() {
+        document.body.classList.remove('gallery-open');
         galleryView.classList.add('hidden');
     }
 
-    document.getElementById('closeGalleryBtn').addEventListener('click', function() {
-        galleryView.classList.add('hidden');
-    });
+    document.getElementById('closeGalleryBtn').addEventListener('click', closeGallery);
 }); 

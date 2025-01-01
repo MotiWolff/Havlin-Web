@@ -18,6 +18,7 @@
   "homepage": "https://github.com/MotiWolff/Havlin-Web#readme",
   "description": "",
   "dependencies": {
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^2.6.1"
   }
 }

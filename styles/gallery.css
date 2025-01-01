@@ -183,9 +183,8 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.9);
     z-index: 2001;
-    cursor: pointer; /* Add this */
 }
 
 .modal-content {
@@ -251,7 +250,7 @@
 .prev { left: 20px; }
 .next { right: 20px; }
 
-
+/* Gallery Fullscreen View */
 .gallery-fullscreen {
     position: fixed;
     top: 0;
@@ -259,28 +258,36 @@
     right: 0;
     bottom: 0;
     background: #1a1a1a;
-    z-index: 1000;
+    z-index: 2000;
     overflow-y: auto;
     padding: 20px;
-    pointer-events: all;
 }
 
+/* Body States */
 body.gallery-open {
     overflow: hidden;
+}
+
+/* כל התוכן שלא בגלריה */
+body.gallery-open > *:not(.gallery-fullscreen):not(.gallery-modal) {
     pointer-events: none;
 }
 
-body.gallery-open #gallery-view {
-    pointer-events: all;
+/* הגלריה עצמה */
+.gallery-fullscreen,
+.gallery-fullscreen * {
+    pointer-events: auto;
 }
 
+/* המודל */
+.gallery-modal,
+.gallery-modal * {
+    pointer-events: auto;
+}
+
+/* טופס ההעלאה */
 body.gallery-open .upload-section {
     display: none;
-    pointer-events: none;
-}
-
-.gallery-modal {
-    z-index: 2001;
 }
 
 .gallery-header {

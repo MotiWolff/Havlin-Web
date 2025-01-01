@@ -10,6 +10,15 @@
     <link href="styles/base.css" rel="stylesheet">
     <link href="styles/trivia.css" rel="stylesheet">
 </head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-00V5J0ESYW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-00V5J0ESYW');
+</script>
 <body>
     <script src="js/auth-check.js"></script>
     <!-- Audio Controls -->
@@ -75,22 +84,18 @@
         <div class="card fade-in">
             <div class="card-body text-center">
                 <h3 class="mb-4">בואו לשחק טריוויה משפחתית!</h3>
-                <p class="mb-4">לחצו על הכפתור למטה כדי להצטרף למשחק הקאהוט המשפחתי</p>
+                <p class="mb-4">סרקו את הקוד למטה כדי להצטרף למשחק הקאהוט המשפחתי</p>
                 
-                <a href="https://kahoot.it/" target="_blank" class="btn btn-primary btn-lg mb-3">
-                    <i class="fas fa-gamepad me-2"></i>
-                    הצטרפו למשחק
-                </a>
-                
-                <div class="mt-4">
-                    <h4>איך משחקים?</h4>
-                    <ol class="text-right">
-                        <li>לחצו על הכפתור "הצטרפו למשחק"</li>
-                        <li>הכניסו את קוד המשחק שקיבלתם</li>
-                        <li>הזינו את שמכם</li>
-                        <li>המתינו לתחילת המשחק</li>
-                    </ol>
+                <div class="qr-container mb-4">
+                    <img src="https://www.dropbox.com/scl/fi/078o94mc987qrhkovmxfs/assignment-qr-code.png?dl=1" 
+                         alt="QR Code for Kahoot" 
+                         class="qr-code">
                 </div>
+                
+                <a href="https://kahoot.it/challenge/02316472?challenge-id=4decb033-ff4b-419a-bb3a-2d17a2f697ed_1735556275268" target="_blank" class="btn btn-primary btn-lg">
+                    <i class="fas fa-gamepad me-2"></i>
+                    או לחצו כאן למשחק
+                </a>
             </div>
         </div>
     </main>

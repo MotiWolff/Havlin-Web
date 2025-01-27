@@ -126,4 +126,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.getElementById('closeGalleryBtn').addEventListener('click', closeGallery);
+<<<<<<< HEAD
 }); 
+=======
+}); 
+>>>>>>> 7ba420a944ec67cb8ac1f1331aee39243bd48f12

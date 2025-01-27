@@ -7,17 +7,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MotiWolff/havlin-website.git"
+    "url": "git+https://github.com/MotiWolff/Havlin-Web.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/MotiWolff/havlin-website/issues"
+    "url": "https://github.com/MotiWolff/Havlin-Web/issues"
   },
-  "homepage": "https://github.com/MotiWolff/havlin-website#readme",
+  "homepage": "https://github.com/MotiWolff/Havlin-Web#readme",
   "description": "",
   "dependencies": {
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^2.6.1"
   }
 }

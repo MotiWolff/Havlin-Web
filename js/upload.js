@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const type = mediaUrl.toLowerCase().includes('.mp4') ? 'video' : 'image';
             
             // המרת הקישור לפורמט הנכון
-            const formattedUrl = mediaUrl.replace(/\?.*$/, '?dl=1');
+            const formattedUrl = processMediaUrl(mediaUrl);
             
             try {
                 const response = await fetch('/.netlify/functions/add-media', {
@@ -51,4 +51,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-}); 
+});
+
+function processMediaUrl(url) {
+    // בדיקה אם זה קישור מדרופבוקס
+    if (url.includes('dropbox.com')) {
+        return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com')
+                 .replace('?dl=0', '')
+                 .concat('?raw=1');
+    }
+    // בדיקה אם זה קישור מגוגל דרייב
+    else if (url.includes('drive.google.com')) {
+        const fileId = url.match(/[-\w]{25,}/);
+        if (fileId) {
+            return `https://drive.google.com/uc?export=view&id=${fileId[0]}`;
+        }
+    }
+    return url;
+} 

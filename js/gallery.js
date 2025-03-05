@@ -11,19 +11,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let currentItems = [];
     let currentIndex = 0;
-    let preloadedImages = new Map(); // Cache for preloaded images
+    let preloadedImages = new Map();
 
-    // Process URL function
+    // Enhanced URL processing with proxy handling
     function processUrl(url) {
+        if (!url) return url;
+
+        // Remove any existing parameters first
+        let cleanUrl = url.split('?')[0];
+
         if (url.includes('dropbox.com')) {
-            let cleanUrl = url.split('?')[0];
-            cleanUrl = cleanUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
-            return cleanUrl + '?raw=1';
+            // Use our proxy function for Dropbox URLs
+            return `/.netlify/functions/proxy-media?url=${encodeURIComponent(url)}`;
         }
-        return url;
+
+        return cleanUrl;
     }
 
-    // Preload image function
+    // Enhanced image preloading
     function preloadImage(url) {
         return new Promise((resolve, reject) => {
             if (preloadedImages.has(url)) {
@@ -32,11 +37,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const img = new Image();
+            
             img.onload = () => {
                 preloadedImages.set(url, img);
                 resolve(img);
             };
-            img.onerror = () => reject(new Error('Failed to load image'));
+            
+            img.onerror = (error) => {
+                console.error('Image load error:', error);
+                reject(new Error('Failed to load image'));
+            };
+            
             img.src = url;
         });
     }
@@ -48,10 +59,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const nextIndex = (currentIndex + 1) % currentItems.length;
         const prevIndex = (currentIndex - 1 + currentItems.length) % currentItems.length;
 
-        if (currentItems[nextIndex].type === 'image') {
+        if (currentItems[nextIndex]?.type === 'image') {
             preloadImage(processUrl(currentItems[nextIndex].url));
         }
-        if (currentItems[prevIndex].type === 'image') {
+        if (currentItems[prevIndex]?.type === 'image') {
             preloadImage(processUrl(currentItems[prevIndex].url));
         }
     }
@@ -97,9 +108,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 return `
                     <div class="gallery-item" onclick="openModal(${index})">
                         <div class="media-wrapper loading">
-                            <img src="${processedUrl}" alt="${item.title}" loading="lazy"
+                            <img src="${processedUrl}" 
+                                 alt="${item.title}" 
+                                 loading="lazy"
                                  onload="this.parentElement.classList.remove('loading')"
-                                 onerror="this.parentElement.classList.add('error')">
+                                 onerror="handleImageError(this)"
+                                 data-original-url="${item.url}">
                             <div class="loading-spinner">
                                 <i class="fas fa-spinner fa-spin"></i>
                             </div>
@@ -112,12 +126,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }).join('');
 
-        // Add video load event listeners
+        // Enhanced video error handling
         galleryGrid.querySelectorAll('video').forEach(video => {
             video.addEventListener('loadeddata', () => {
                 video.parentElement.classList.remove('loading');
             });
-            video.addEventListener('error', () => {
+            video.addEventListener('error', (e) => {
+                console.error('Video load error:', e);
                 video.parentElement.classList.add('error');
             });
         });
@@ -125,6 +140,23 @@ document.addEventListener('DOMContentLoaded', function() {
         galleryView.classList.remove('hidden');
     }
 
+    // Global error handler for images
+    window.handleImageError = function(img) {
+        console.error('Image load error:', img.src);
+        const wrapper = img.parentElement;
+        wrapper.classList.add('error');
+        
+        // Try alternative URL format if not already using proxy
+        if (!img.dataset.retried && !img.src.includes('/.netlify/functions/proxy-media')) {
+            img.dataset.retried = 'true';
+            const originalUrl = img.dataset.originalUrl;
+            if (originalUrl) {
+                img.src = processUrl(originalUrl);
+            }
+        }
+    };
+
+    // Enhanced modal opening
     window.openModal = async function(index) {
         currentIndex = index;
         modal.style.display = 'block';
@@ -132,6 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
         preloadAdjacentImages();
     }
 
+    // Enhanced modal update
     async function updateModal() {
         const item = currentItems[currentIndex];
         const processedUrl = processUrl(item.url);
@@ -153,13 +186,19 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 await preloadImage(processedUrl);
                 modalContainer.innerHTML = `
-                    <img class="modal-media" src="${processedUrl}" alt="${item.title}">`;
+                    <img class="modal-media" 
+                         src="${processedUrl}" 
+                         alt="${item.title}">`;
             }
         } catch (error) {
+            console.error('Modal media load error:', error);
             modalContainer.innerHTML = `
                 <div class="error-message">
                     <i class="fas fa-exclamation-triangle"></i>
                     <p>Failed to load media</p>
+                    <button class="btn btn-outline-warning mt-2" onclick="retryLoadMedia(${currentIndex})">
+                        <i class="fas fa-redo"></i> Retry
+                    </button>
                 </div>`;
         }
 
@@ -167,6 +206,13 @@ document.addEventListener('DOMContentLoaded', function() {
         prevButton.style.display = item.type === 'video' ? 'none' : 'block';
         nextButton.style.display = item.type === 'video' ? 'none' : 'block';
     }
+
+    // Add retry functionality
+    window.retryLoadMedia = function(index) {
+        if (index === currentIndex) {
+            updateModal();
+        }
+    };
 
     // Keyboard navigation
     document.addEventListener('keydown', function(e) {

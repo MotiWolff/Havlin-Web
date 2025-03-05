@@ -12,12 +12,29 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentItems = [];
     let currentIndex = 0;
 
+    // Process URL function
+    function processUrl(url) {
+        if (url.includes('dropbox.com')) {
+            // Remove any existing parameters
+            let cleanUrl = url.split('?')[0];
+            // Replace www.dropbox.com with dl.dropboxusercontent.com
+            cleanUrl = cleanUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+            // Add raw=1 parameter
+            return cleanUrl + '?raw=1';
+        }
+        return url;
+    }
+
     // מאזיני לחיצה לקטגוריות
     document.querySelectorAll('.category-item').forEach(category => {
         category.addEventListener('click', () => {
             const galleryType = category.dataset.gallery;
+            console.log('Opening gallery:', galleryType);
             if (galleryData[galleryType] && galleryData[galleryType].length > 0) {
+                console.log('Gallery data found:', galleryData[galleryType]);
                 openGallery(galleryType);
+            } else {
+                console.log('No data found for gallery:', galleryType);
             }
         });
     });
@@ -28,11 +45,14 @@ document.addEventListener('DOMContentLoaded', function() {
         galleryTitle.textContent = document.querySelector(`[data-gallery="${category}"] span`).textContent;
         
         galleryGrid.innerHTML = currentItems.map((item, index) => {
+            const processedUrl = processUrl(item.url);
+            console.log('Processing item:', item);
             if (item.type === 'video') {
                 return `
                     <div class="gallery-item" onclick="openModal(${index})">
                         <video>
-                            <source src="${item.url}" type="video/mp4">
+                            <source src="${processedUrl}" type="video/mp4">
+                            Your browser does not support the video tag.
                         </video>
                         <div class="play-overlay">
                             <i class="fas fa-play"></i>
@@ -45,7 +65,8 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 return `
                     <div class="gallery-item" onclick="openModal(${index})">
-                        <img src="${item.url}" alt="${item.title}">
+                        <img src="${processedUrl}" alt="${item.title}" 
+                             onerror="this.onerror=null; this.src='path-to-fallback-image.jpg'; this.classList.add('error');">
                         <div class="item-caption">
                             <h4>${item.title}</h4>
                             <p>${item.description}</p>
@@ -58,6 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     window.openModal = function(index) {
+        console.log('Opening modal for index:', index);
         currentIndex = index;
         updateModal();
         modal.style.display = 'block';
@@ -65,25 +87,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateModal() {
         const item = currentItems[currentIndex];
+        const processedUrl = processUrl(item.url);
+        console.log('Updating modal with item:', item);
         if (item.type === 'video') {
             modalContainer.innerHTML = `
                 <video controls autoplay class="modal-media">
-                    <source src="${item.url.replace('&dl=0', '&dl=1')}" type="video/mp4">
+                    <source src="${processedUrl}" type="video/mp4">
+                    Your browser does not support the video tag.
                 </video>`;
         } else {
             modalContainer.innerHTML = `
-                <img class="modal-media" src="${item.url}" alt="${item.title}">`;
+                <img class="modal-media" src="${processedUrl}" alt="${item.title}"
+                     onerror="this.onerror=null; this.src='path-to-fallback-image.jpg'; this.classList.add('error');">`;
         }
         modalCaption.innerHTML = `<h4>${item.title}</h4><p>${item.description}</p>`;
         
-        // הצג/הסתר כפתורי ניווט בהתאם לסוג המדיה
-        if (item.type === 'video') {
-            prevButton.style.display = 'none';
-            nextButton.style.display = 'none';
-        } else {
-            prevButton.style.display = 'block';
-            nextButton.style.display = 'block';
-        }
+        prevButton.style.display = item.type === 'video' ? 'none' : 'block';
+        nextButton.style.display = item.type === 'video' ? 'none' : 'block';
     }
 
     modalClose.onclick = function() {

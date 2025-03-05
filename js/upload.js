@@ -54,13 +54,16 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function processMediaUrl(url) {
-    // בדיקה אם זה קישור מדרופבוקס
+    // For Dropbox URLs
     if (url.includes('dropbox.com')) {
-        return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com')
-                 .replace('?dl=0', '')
-                 .concat('?raw=1');
+        // Remove any existing parameters
+        let cleanUrl = url.split('?')[0];
+        // Replace www.dropbox.com with dl.dropboxusercontent.com
+        cleanUrl = cleanUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+        // Add raw=1 parameter
+        return cleanUrl + '?raw=1';
     }
-    // בדיקה אם זה קישור מגוגל דרייב
+    // For Google Drive URLs
     else if (url.includes('drive.google.com')) {
         const fileId = url.match(/[-\w]{25,}/);
         if (fileId) {

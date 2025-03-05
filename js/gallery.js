@@ -65,8 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 return `
                     <div class="gallery-item" onclick="openModal(${index})">
-                        <img src="${processedUrl}" alt="${item.title}" 
-                             onerror="this.onerror=null; this.src='path-to-fallback-image.jpg'; this.classList.add('error');">
+                        <img src="${processedUrl}" alt="${item.title}">
                         <div class="item-caption">
                             <h4>${item.title}</h4>
                             <p>${item.description}</p>
@@ -97,8 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </video>`;
         } else {
             modalContainer.innerHTML = `
-                <img class="modal-media" src="${processedUrl}" alt="${item.title}"
-                     onerror="this.onerror=null; this.src='path-to-fallback-image.jpg'; this.classList.add('error');">`;
+                <img class="modal-media" src="${processedUrl}" alt="${item.title}">`;
         }
         modalCaption.innerHTML = `<h4>${item.title}</h4><p>${item.description}</p>`;
         

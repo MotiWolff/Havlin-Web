@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.category-item').forEach(category => {
         category.addEventListener('click', () => {
             const galleryType = category.dataset.gallery;
+            console.log('Gallery type:', galleryType);
+            console.log('Gallery data:', galleryData[galleryType]);
+            
             if (galleryData[galleryType] && galleryData[galleryType].length > 0) {
                 openGallery(galleryType);
             }

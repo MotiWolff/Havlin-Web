@@ -538,6 +538,14 @@ body.gallery-open::before {
     font-size: 2rem;
 }
 
+.media-wrapper:not(.loading) .loading-spinner {
+    display: none;
+}
+
+.media-wrapper img.loaded + .loading-spinner {
+    display: none;
+}
+
 .play-overlay {
     position: absolute;
     top: 50%;

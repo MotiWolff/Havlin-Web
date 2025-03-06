@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <img src="${processedUrl}" 
                              alt="${item.title}" 
                              loading="lazy"
-                             onload="this.parentElement.classList.remove('loading')"
+                             onload="hideLoadingSpinner(this)"
                              onerror="handleImageError(this)"
                              data-original-url="${item.url}">
                         <div class="loading-spinner">
@@ -212,6 +212,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>`;
         }).join('');
+
+        window.hideLoadingSpinner = function(img) {
+            if (img && img.parentElement) {
+                // Remove loading class from the parent
+                img.parentElement.classList.remove('loading');
+                
+                // Also explicitly hide the spinner
+                const spinner = img.parentElement.querySelector('.loading-spinner');
+                if (spinner) {
+                    spinner.style.display = 'none';
+                }
+            }
+        };
 
         // Enhanced video error handling
         galleryGrid.querySelectorAll('video').forEach(video => {

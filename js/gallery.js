@@ -54,22 +54,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Enhanced URL processing with direct URL handling and proxy fallback
     function processUrl(url) {
         if (!url) return url;
-
-        // Remove any existing parameters first
-        let cleanUrl = url.split('?')[0];
-
+    
+        // For Dropbox URLs, just use the original URL with dl=1
         if (url.includes('dropbox.com')) {
-            try {
-                // Try direct URL first
-                return getDirectDropboxUrl(url);
-            } catch (e) {
-                console.warn('Error creating direct URL, falling back to proxy:', e);
-                // Fall back to proxy if direct conversion fails
-                return `/.netlify/functions/proxy-media?url=${encodeURIComponent(url)}&t=${Date.now()}`;
+            // If URL already has dl=1, use it directly
+            if (url.includes('dl=1')) {
+                return url;
             }
+            
+            // Otherwise add dl=1 parameter
+            return url + (url.includes('?') ? '&dl=1' : '?dl=1');
         }
-
-        return cleanUrl;
+    
+        return url;
     }
 
     // Enhanced image preloading with retry logic
@@ -236,44 +233,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const wrapper = img.parentElement;
         wrapper.classList.add('error');
         
-        // Try alternative URL format if not already tried
-        if (!img.dataset.retried) {
-            img.dataset.retried = 'true';
-            const originalUrl = img.dataset.originalUrl;
-            
-            if (originalUrl) {
-                console.log('Retrying with alternate URL format');
-                
-                // Try direct Dropbox URL first
-                if (originalUrl.includes('dropbox.com') && !img.src.includes('raw=1')) {
-                    console.log('Trying direct Dropbox URL');
-                    img.src = getDirectDropboxUrl(originalUrl);
-                    return;
-                }
-                
-                // Fall back to proxy if not already using it
-                if (!img.src.includes('/.netlify/functions/proxy-media')) {
-                    console.log('Falling back to proxy URL');
-                    img.src = `/.netlify/functions/proxy-media?url=${encodeURIComponent(originalUrl)}&t=${Date.now()}`;
-                    return;
-                }
-                
-                // Add cache buster if all else failed
-                if (img.src.includes('/.netlify/functions/proxy-media')) {
-                    console.log('Adding cache buster to proxy URL');
-                    img.src = `${img.src}&cb=${Date.now()}`;
-                    return;
-                }
-            }
-        }
+        const originalUrl = img.dataset.originalUrl;
         
-        // If all retries fail, show error placeholder
-        if (img.dataset.retried === 'true') {
+        // If not already using proxy and we have an original URL, try proxy
+        if (!img.src.includes('/.netlify/functions/proxy-media') && originalUrl) {
+            console.log('Falling back to proxy URL:', originalUrl);
+            img.src = `/.netlify/functions/proxy-media?url=${encodeURIComponent(originalUrl)}&t=${Date.now()}`;
+        } else {
+            // Show error UI
             wrapper.innerHTML = `
                 <div class="error-message">
                     <i class="fas fa-exclamation-triangle"></i>
                     <p>Failed to load image</p>
-                    <button class="btn btn-sm btn-outline-warning mt-2" onclick="retryImage(this, '${encodeURIComponent(img.dataset.originalUrl)}')">
+                    <button class="retry-btn" onclick="retryImage(this, '${encodeURIComponent(originalUrl || '')}')">
                         <i class="fas fa-redo"></i> Retry
                     </button>
                 </div>
@@ -281,8 +253,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
     
-    // Add global retry function
+    // Simple retry function
     window.retryImage = function(button, encodedUrl) {
+        if (!encodedUrl) return;
+        
         const url = decodeURIComponent(encodedUrl);
         const wrapper = button.closest('.media-wrapper');
         
@@ -290,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
         wrapper.classList.add('loading');
         wrapper.classList.remove('error');
         wrapper.innerHTML = `
-            <img src="${getDirectDropboxUrl(url)}" 
+            <img src="${url}?dl=1&t=${Date.now()}" 
                  alt="Retrying..." 
                  loading="lazy"
                  onload="this.parentElement.classList.remove('loading')"

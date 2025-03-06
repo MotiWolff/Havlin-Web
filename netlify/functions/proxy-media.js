@@ -35,75 +35,36 @@ exports.handler = async function(event, context) {
     console.log('Original URL:', url);
 
     try {
-        // Simplify the Dropbox URL handling
-        let processedUrl = url;
+        // Simple URL transformation for Dropbox - just add dl=1 if not present
+        let fetchUrl = url;
         
         if (url.includes('dropbox.com')) {
-            // Replace dropbox.com with dl.dropboxusercontent.com and add raw=1
-            processedUrl = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
-            
-            // Add raw=1 parameter if not already present
-            if (!processedUrl.includes('raw=1')) {
-                processedUrl += processedUrl.includes('?') ? '&raw=1' : '?raw=1';
-            }
-            
-            // If URL contains '/scl/fi/', handle the special format
-            if (processedUrl.includes('/scl/fi/')) {
-                // This converts new-style Dropbox links to dl links
-                const urlObj = new URL(url);
-                const pathParts = urlObj.pathname.split('/');
-                // Extract the file ID and name
-                const fileId = pathParts[pathParts.indexOf('scl') + 2];
-                const fileName = pathParts[pathParts.length - 1];
-                
-                // Construct the raw content URL
-                processedUrl = `https://dl.dropboxusercontent.com/scl/fi/${fileId}/${fileName}?raw=1`;
-                
-                // Add rlkey if present in original URL
-                const params = new URLSearchParams(urlObj.search);
-                const rlkey = params.get('rlkey');
-                if (rlkey) {
-                    processedUrl += `&rlkey=${rlkey}`;
-                }
+            // Add dl=1 parameter if not already present
+            if (!fetchUrl.includes('dl=1')) {
+                fetchUrl += fetchUrl.includes('?') ? '&dl=1' : '?dl=1';
             }
         }
 
-        console.log('Processed URL:', processedUrl);
+        console.log('Fetching URL:', fetchUrl);
 
-        // Fetch the media with expanded timeout and better error handling
-        const response = await fetch(processedUrl, {
+        // Fetch the media
+        const response = await fetch(fetchUrl, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                'Accept': '*/*',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Connection': 'keep-alive',
-                'Cache-Control': 'no-cache'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
             },
             redirect: 'follow',
-            timeout: 30000 // 30 second timeout
+            timeout: 30000
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Media fetch error:', {
-                status: response.status,
-                statusText: response.statusText,
-                url: processedUrl,
-                errorText: errorText.substring(0, 500), // Limit error text size
-                headers: Object.fromEntries(response.headers.entries())
-            });
-            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText.substring(0, 100)}`);
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        // Get content as array buffer instead of buffer for better compatibility
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
+        const buffer = await response.buffer();
         const contentType = response.headers.get('content-type') || 'application/octet-stream';
 
         console.log('Successfully fetched media:', {
-            originalUrl: url,
-            processedUrl: processedUrl,
-            contentType: contentType,
+            contentType,
             size: buffer.length
         });
 
@@ -112,18 +73,13 @@ exports.handler = async function(event, context) {
             headers: {
                 ...headers,
                 'Content-Type': contentType,
-                'Cache-Control': 'public, max-age=31536000',
-                'Content-Disposition': 'inline'
+                'Cache-Control': 'public, max-age=31536000'
             },
             body: buffer.toString('base64'),
             isBase64Encoded: true
         };
     } catch (error) {
-        console.error('Proxy error:', {
-            error: error.message,
-            originalUrl: url,
-            stack: error.stack
-        });
+        console.error('Proxy error:', error.message);
         
         return {
             statusCode: 500,
@@ -134,7 +90,7 @@ exports.handler = async function(event, context) {
             body: JSON.stringify({
                 error: 'Failed to fetch media',
                 details: error.message,
-                url: url
+                url
             })
         };
     }

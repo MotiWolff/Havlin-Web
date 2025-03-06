@@ -12,6 +12,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentItems = [];
     let currentIndex = 0;
     let preloadedImages = new Map();
+    let retryCount = new Map();
+    const MAX_RETRIES = 3;
 
     // Enhanced URL processing with proxy handling
     function processUrl(url) {
@@ -28,42 +30,85 @@ document.addEventListener('DOMContentLoaded', function() {
         return cleanUrl;
     }
 
-    // Enhanced image preloading
-    function preloadImage(url) {
-        return new Promise((resolve, reject) => {
-            if (preloadedImages.has(url)) {
-                resolve(preloadedImages.get(url));
-                return;
-            }
+    // Enhanced image preloading with retry logic
+    async function preloadImage(url, retries = 0) {
+        if (preloadedImages.has(url)) {
+            return preloadedImages.get(url);
+        }
 
+        return new Promise((resolve, reject) => {
             const img = new Image();
             
             img.onload = () => {
                 preloadedImages.set(url, img);
+                retryCount.delete(url); // Reset retry count on success
                 resolve(img);
             };
             
-            img.onerror = (error) => {
-                console.error('Image load error:', error);
-                reject(new Error('Failed to load image'));
+            img.onerror = async (error) => {
+                console.warn(`Image load error (attempt ${retries + 1}):`, url);
+                
+                if (retries < MAX_RETRIES) {
+                    try {
+                        const result = await preloadImage(url, retries + 1);
+                        resolve(result);
+                    } catch (retryError) {
+                        reject(retryError);
+                    }
+                } else {
+                    reject(new Error(`Failed to load image after ${MAX_RETRIES} attempts`));
+                }
             };
             
+            // Add a timeout to prevent hanging
+            const timeout = setTimeout(() => {
+                img.src = ''; // Cancel the current request
+                reject(new Error('Image load timeout'));
+            }, 30000); // 30 second timeout
+
             img.src = url;
+
+            // Clear timeout if image loads or errors
+            img.onload = () => {
+                clearTimeout(timeout);
+                preloadedImages.set(url, img);
+                retryCount.delete(url);
+                resolve(img);
+            };
+
+            img.onerror = async (error) => {
+                clearTimeout(timeout);
+                const currentRetries = retryCount.get(url) || 0;
+                if (currentRetries < MAX_RETRIES) {
+                    retryCount.set(url, currentRetries + 1);
+                    console.warn(`Retrying image load (${currentRetries + 1}/${MAX_RETRIES}):`, url);
+                    setTimeout(() => {
+                        img.src = processUrl(url) + `&retry=${currentRetries + 1}`;
+                    }, 1000 * (currentRetries + 1)); // Exponential backoff
+                } else {
+                    retryCount.delete(url);
+                    reject(new Error(`Failed to load image after ${MAX_RETRIES} attempts`));
+                }
+            };
         });
     }
 
     // Preload adjacent images
-    function preloadAdjacentImages() {
+    async function preloadAdjacentImages() {
         if (!currentItems.length) return;
 
         const nextIndex = (currentIndex + 1) % currentItems.length;
         const prevIndex = (currentIndex - 1 + currentItems.length) % currentItems.length;
 
-        if (currentItems[nextIndex]?.type === 'image') {
-            preloadImage(processUrl(currentItems[nextIndex].url));
-        }
-        if (currentItems[prevIndex]?.type === 'image') {
-            preloadImage(processUrl(currentItems[prevIndex].url));
+        try {
+            if (currentItems[nextIndex]?.type === 'image') {
+                await preloadImage(processUrl(currentItems[nextIndex].url));
+            }
+            if (currentItems[prevIndex]?.type === 'image') {
+                await preloadImage(processUrl(currentItems[prevIndex].url));
+            }
+        } catch (error) {
+            console.warn('Failed to preload adjacent images:', error);
         }
     }
 
@@ -104,26 +149,25 @@ document.addEventListener('DOMContentLoaded', function() {
                             <p>${item.description}</p>
                         </div>
                     </div>`;
-            } else {
-                return `
-                    <div class="gallery-item" onclick="openModal(${index})">
-                        <div class="media-wrapper loading">
-                            <img src="${processedUrl}" 
-                                 alt="${item.title}" 
-                                 loading="lazy"
-                                 onload="this.parentElement.classList.remove('loading')"
-                                 onerror="handleImageError(this)"
-                                 data-original-url="${item.url}">
-                            <div class="loading-spinner">
-                                <i class="fas fa-spinner fa-spin"></i>
-                            </div>
-                        </div>
-                        <div class="item-caption">
-                            <h4>${item.title}</h4>
-                            <p>${item.description}</p>
-                        </div>
-                    </div>`;
             }
+            return `
+                <div class="gallery-item" onclick="openModal(${index})">
+                    <div class="media-wrapper loading">
+                        <img src="${processedUrl}" 
+                             alt="${item.title}" 
+                             loading="lazy"
+                             onload="this.parentElement.classList.remove('loading')"
+                             onerror="handleImageError(this)"
+                             data-original-url="${item.url}">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                    </div>
+                    <div class="item-caption">
+                        <h4>${item.title}</h4>
+                        <p>${item.description}</p>
+                    </div>
+                </div>`;
         }).join('');
 
         // Enhanced video error handling
@@ -151,20 +195,27 @@ document.addEventListener('DOMContentLoaded', function() {
             img.dataset.retried = 'true';
             const originalUrl = img.dataset.originalUrl;
             if (originalUrl) {
+                console.log('Retrying with proxy URL:', originalUrl);
                 img.src = processUrl(originalUrl);
             }
         }
     };
 
-    // Enhanced modal opening
+    // Enhanced modal opening with error handling
     window.openModal = async function(index) {
-        currentIndex = index;
-        modal.style.display = 'block';
-        await updateModal();
-        preloadAdjacentImages();
+        try {
+            currentIndex = index;
+            modal.style.display = 'block';
+            await updateModal();
+            preloadAdjacentImages().catch(console.warn);
+        } catch (error) {
+            console.error('Error opening modal:', error);
+            modal.style.display = 'none';
+            alert('Failed to open image. Please try again.');
+        }
     }
 
-    // Enhanced modal update
+    // Enhanced modal update with better error handling
     async function updateModal() {
         const item = currentItems[currentIndex];
         const processedUrl = processUrl(item.url);
@@ -182,9 +233,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 await new Promise((resolve, reject) => {
                     video.addEventListener('loadeddata', resolve);
                     video.addEventListener('error', reject);
+                    // Add timeout to prevent hanging
+                    setTimeout(() => reject(new Error('Video load timeout')), 30000);
                 });
             } else {
-                await preloadImage(processedUrl);
+                const img = await preloadImage(processedUrl);
                 modalContainer.innerHTML = `
                     <img class="modal-media" 
                          src="${processedUrl}" 
@@ -203,14 +256,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         modalCaption.innerHTML = `<h4>${item.title}</h4><p>${item.description}</p>`;
-        prevButton.style.display = item.type === 'video' ? 'none' : 'block';
-        nextButton.style.display = item.type === 'video' ? 'none' : 'block';
+        prevButton.style.display = currentItems.length > 1 ? 'block' : 'none';
+        nextButton.style.display = currentItems.length > 1 ? 'block' : 'none';
     }
 
     // Add retry functionality
     window.retryLoadMedia = function(index) {
         if (index === currentIndex) {
-            updateModal();
+            updateModal().catch(console.error);
         }
     };
 
@@ -223,26 +276,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 closeModal();
                 break;
             case 'ArrowLeft':
-                if (currentItems[currentIndex].type !== 'video') {
+                if (currentItems.length > 1) {
                     navigateGallery('prev');
                 }
                 break;
             case 'ArrowRight':
-                if (currentItems[currentIndex].type !== 'video') {
+                if (currentItems.length > 1) {
                     navigateGallery('next');
                 }
                 break;
         }
     });
 
-    function navigateGallery(direction) {
-        if (direction === 'next') {
-            currentIndex = (currentIndex + 1) % currentItems.length;
-        } else {
-            currentIndex = (currentIndex - 1 + currentItems.length) % currentItems.length;
+    async function navigateGallery(direction) {
+        try {
+            if (direction === 'next') {
+                currentIndex = (currentIndex + 1) % currentItems.length;
+            } else {
+                currentIndex = (currentIndex - 1 + currentItems.length) % currentItems.length;
+            }
+            await updateModal();
+            preloadAdjacentImages().catch(console.warn);
+        } catch (error) {
+            console.error('Navigation error:', error);
         }
-        updateModal();
-        preloadAdjacentImages();
     }
 
     function closeModal() {

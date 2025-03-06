@@ -33,7 +33,7 @@ exports.handler = async function(event, context) {
     }
 
     try {
-        // Process Dropbox URL
+        // First try to get the direct download URL from Dropbox
         let processedUrl = url;
         
         if (url.includes('dropbox.com')) {
@@ -42,41 +42,53 @@ exports.handler = async function(event, context) {
             const params = new URLSearchParams(urlObj.search);
             const rlkey = params.get('rlkey');
 
-            // Log original URL components
-            console.log('Original URL components:', {
-                fullUrl: url,
+            console.log('Processing Dropbox URL:', {
+                originalUrl: url,
                 path: path,
                 rlkey: rlkey
             });
 
-            // Handle /scl/fi/ format
-            if (path.includes('/scl/fi/')) {
-                // Extract the file ID and name
-                const parts = path.split('/');
-                const fileId = parts[parts.length - 2];
-                const fileName = parts[parts.length - 1];
+            // Try to get the shared link first
+            try {
+                const sharedLinkResponse = await fetch(url, {
+                    method: 'HEAD',
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)'
+                    },
+                    redirect: 'follow'
+                });
+
+                if (sharedLinkResponse.ok) {
+                    processedUrl = sharedLinkResponse.url;
+                    console.log('Got shared link URL:', processedUrl);
+                }
+            } catch (error) {
+                console.log('Failed to get shared link, falling back to direct URL:', error.message);
+            }
+
+            // If we still have the original URL, try to convert it
+            if (processedUrl === url) {
+                if (path.includes('/scl/fi/')) {
+                    const parts = path.split('/');
+                    const fileId = parts[parts.length - 2];
+                    const fileName = parts[parts.length - 1];
+                    path = `/${fileId}/${fileName}`;
+                }
+
+                processedUrl = `https://dl.dropboxusercontent.com${path}`;
                 
-                // Construct the new path
-                path = `/${fileId}/${fileName}`;
+                const queryParams = [];
+                if (rlkey) {
+                    queryParams.push(`rlkey=${rlkey}`);
+                }
+                queryParams.push('raw=1');
+                processedUrl += `?${queryParams.join('&')}`;
             }
 
-            // Convert to dl.dropboxusercontent.com format
-            processedUrl = `https://dl.dropboxusercontent.com${path}`;
-
-            // Add parameters
-            const queryParams = [];
-            if (rlkey) {
-                queryParams.push(`rlkey=${rlkey}`);
-            }
-            queryParams.push('raw=1');
-            processedUrl += `?${queryParams.join('&')}`;
-
-            // Log processed URL
-            console.log('Processed URL:', processedUrl);
+            console.log('Final processed URL:', processedUrl);
         }
 
-        console.log('Attempting to fetch from URL:', processedUrl);
-
+        // Fetch the media
         const response = await fetch(processedUrl, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)',
@@ -87,15 +99,9 @@ exports.handler = async function(event, context) {
             redirect: 'follow'
         });
 
-        // Log response headers for debugging
-        console.log('Response headers:', {
-            status: response.status,
-            headers: Object.fromEntries(response.headers.entries())
-        });
-
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('Dropbox response error:', {
+            console.error('Media fetch error:', {
                 status: response.status,
                 statusText: response.statusText,
                 url: processedUrl,
@@ -108,12 +114,11 @@ exports.handler = async function(event, context) {
         const buffer = await response.buffer();
         const contentType = response.headers.get('content-type');
 
-        console.log('Successfully proxied media:', {
+        console.log('Successfully fetched media:', {
             originalUrl: url,
             processedUrl: processedUrl,
             contentType: contentType,
-            size: buffer.length,
-            responseHeaders: Object.fromEntries(response.headers.entries())
+            size: buffer.length
         });
 
         return {

@@ -2,10 +2,23 @@
 const fetch = require('node-fetch');
 
 exports.handler = async function(event, context) {
+    // Enable CORS
+    const headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS'
+    };
+
+    // Handle OPTIONS request (CORS preflight)
+    if (event.httpMethod === 'OPTIONS') {
+        return { statusCode: 200, headers, body: '' };
+    }
+
     // Only allow GET requests
     if (event.httpMethod !== 'GET') {
-        return {
-            statusCode: 405,
+        return { 
+            statusCode: 405, 
+            headers,
             body: JSON.stringify({ error: 'Method not allowed' })
         };
     }
@@ -14,15 +27,8 @@ exports.handler = async function(event, context) {
     if (!url) {
         return {
             statusCode: 400,
+            headers,
             body: JSON.stringify({ error: 'URL parameter is required' })
-        };
-    }
-
-    // Validate URL is from allowed domains (Dropbox)
-    if (!url.includes('dropbox.com') && !url.includes('dropboxusercontent.com')) {
-        return {
-            statusCode: 403,
-            body: JSON.stringify({ error: 'Invalid domain' })
         };
     }
 
@@ -30,46 +36,51 @@ exports.handler = async function(event, context) {
         // Process Dropbox URL
         let processedUrl = url;
         
-        // Handle different Dropbox URL formats
-        if (url.includes('www.dropbox.com')) {
-            // Extract the file path and any additional parameters
+        if (url.includes('dropbox.com')) {
+            // Extract the file path and parameters
             const urlObj = new URL(url);
             const path = urlObj.pathname;
             const params = new URLSearchParams(urlObj.search);
-            const rlkey = params.get('rlkey'); // Get the rlkey if it exists
+            const rlkey = params.get('rlkey');
+            
+            // Remove /scl/fi/ from path if present
+            const cleanPath = path.replace('/scl/fi/', '/');
             
             // Convert to dl.dropboxusercontent.com format
-            processedUrl = `https://dl.dropboxusercontent.com${path}`;
+            processedUrl = `https://dl.dropboxusercontent.com${cleanPath}`;
             
             // Add necessary parameters
-            if (rlkey) {
-                processedUrl += `?rlkey=${rlkey}&raw=1`;
-            } else {
-                processedUrl += '?raw=1';
-            }
+            const queryParams = [];
+            if (rlkey) queryParams.push(`rlkey=${rlkey}`);
+            queryParams.push('raw=1');
+            
+            processedUrl += `?${queryParams.join('&')}`;
         }
 
-        console.log('Fetching from URL:', processedUrl);
+        console.log('Attempting to fetch from URL:', processedUrl);
 
         const response = await fetch(processedUrl, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)'
-            }
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)',
+                'Accept': '*/*'
+            },
+            redirect: 'follow'
         });
-        
+
         if (!response.ok) {
+            const errorText = await response.text();
             console.error('Dropbox response error:', {
                 status: response.status,
                 statusText: response.statusText,
-                url: processedUrl
+                url: processedUrl,
+                errorText: errorText
             });
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
 
         const buffer = await response.buffer();
         const contentType = response.headers.get('content-type');
 
-        // Log successful response
         console.log('Successfully proxied media:', {
             originalUrl: url,
             processedUrl: processedUrl,
@@ -80,9 +91,9 @@ exports.handler = async function(event, context) {
         return {
             statusCode: 200,
             headers: {
-                'Content-Type': contentType,
-                'Access-Control-Allow-Origin': '*',
-                'Cache-Control': 'public, max-age=31536000', // Cache for 1 year
+                ...headers,
+                'Content-Type': contentType || 'application/octet-stream',
+                'Cache-Control': 'public, max-age=31536000',
                 'Content-Disposition': 'inline'
             },
             body: buffer.toString('base64'),
@@ -97,6 +108,7 @@ exports.handler = async function(event, context) {
         
         return {
             statusCode: 500,
+            headers,
             body: JSON.stringify({
                 error: 'Failed to fetch media',
                 details: error.message,

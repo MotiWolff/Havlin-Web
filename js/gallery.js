@@ -15,7 +15,43 @@ document.addEventListener('DOMContentLoaded', function() {
     let retryCount = new Map();
     const MAX_RETRIES = 3;
 
-    // Enhanced URL processing with proxy handling
+    // Function to get direct Dropbox URL
+    function getDirectDropboxUrl(url) {
+        if (url.includes('dropbox.com')) {
+            // Convert to direct download URL
+            let directUrl = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+            
+            // Handle special format URLs
+            if (directUrl.includes('/scl/fi/')) {
+                // This handles newer Dropbox sharing format
+                const urlObj = new URL(url);
+                const pathParts = urlObj.pathname.split('/');
+                // Extract the file ID and name
+                const fileId = pathParts[pathParts.indexOf('scl') + 2];
+                const fileName = pathParts[pathParts.length - 1];
+                
+                // Construct the raw content URL
+                directUrl = `https://dl.dropboxusercontent.com/scl/fi/${fileId}/${fileName}`;
+                
+                // Add rlkey if present in original URL
+                const params = new URLSearchParams(urlObj.search);
+                const rlkey = params.get('rlkey');
+                if (rlkey) {
+                    directUrl += `?rlkey=${rlkey}`;
+                }
+            }
+            
+            // Add raw=1 parameter if not already present
+            if (!directUrl.includes('raw=1')) {
+                directUrl += directUrl.includes('?') ? '&raw=1' : '?raw=1';
+            }
+            
+            return directUrl;
+        }
+        return url;
+    }
+
+    // Enhanced URL processing with direct URL handling and proxy fallback
     function processUrl(url) {
         if (!url) return url;
 
@@ -23,8 +59,14 @@ document.addEventListener('DOMContentLoaded', function() {
         let cleanUrl = url.split('?')[0];
 
         if (url.includes('dropbox.com')) {
-            // Use our proxy function for Dropbox URLs
-            return `/.netlify/functions/proxy-media?url=${encodeURIComponent(url)}`;
+            try {
+                // Try direct URL first
+                return getDirectDropboxUrl(url);
+            } catch (e) {
+                console.warn('Error creating direct URL, falling back to proxy:', e);
+                // Fall back to proxy if direct conversion fails
+                return `/.netlify/functions/proxy-media?url=${encodeURIComponent(url)}&t=${Date.now()}`;
+            }
         }
 
         return cleanUrl;
@@ -39,36 +81,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return new Promise((resolve, reject) => {
             const img = new Image();
             
-            img.onload = () => {
-                preloadedImages.set(url, img);
-                retryCount.delete(url); // Reset retry count on success
-                resolve(img);
-            };
-            
-            img.onerror = async (error) => {
-                console.warn(`Image load error (attempt ${retries + 1}):`, url);
-                
-                if (retries < MAX_RETRIES) {
-                    try {
-                        const result = await preloadImage(url, retries + 1);
-                        resolve(result);
-                    } catch (retryError) {
-                        reject(retryError);
-                    }
-                } else {
-                    reject(new Error(`Failed to load image after ${MAX_RETRIES} attempts`));
-                }
-            };
-            
             // Add a timeout to prevent hanging
             const timeout = setTimeout(() => {
                 img.src = ''; // Cancel the current request
                 reject(new Error('Image load timeout'));
             }, 30000); // 30 second timeout
 
-            img.src = url;
-
-            // Clear timeout if image loads or errors
             img.onload = () => {
                 clearTimeout(timeout);
                 preloadedImages.set(url, img);
@@ -78,18 +96,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
             img.onerror = async (error) => {
                 clearTimeout(timeout);
+                console.warn(`Image load error (attempt ${retries + 1}):`, url);
+                
                 const currentRetries = retryCount.get(url) || 0;
                 if (currentRetries < MAX_RETRIES) {
                     retryCount.set(url, currentRetries + 1);
                     console.warn(`Retrying image load (${currentRetries + 1}/${MAX_RETRIES}):`, url);
-                    setTimeout(() => {
-                        img.src = processUrl(url) + `&retry=${currentRetries + 1}`;
+                    
+                    // Try alternate URL strategy on retry
+                    setTimeout(async () => {
+                        try {
+                            let retryUrl = url;
+                            
+                            // If it's a Dropbox URL and we're not already using direct link
+                            if (url.includes('dropbox.com') && !url.includes('raw=1')) {
+                                retryUrl = getDirectDropboxUrl(url);
+                            } 
+                            // If not already using proxy, try that next
+                            else if (!url.includes('/.netlify/functions/proxy-media')) {
+                                const originalUrl = url.split('?')[0]; // Get clean URL
+                                retryUrl = `/.netlify/functions/proxy-media?url=${encodeURIComponent(originalUrl)}&retry=${currentRetries + 1}`;
+                            }
+                            // Add cache buster
+                            else {
+                                retryUrl = `${url}&cb=${Date.now()}`;
+                            }
+                            
+                            console.log(`Retry attempt with URL: ${retryUrl}`);
+                            const result = await preloadImage(retryUrl, currentRetries + 1);
+                            resolve(result);
+                        } catch (retryError) {
+                            reject(retryError);
+                        }
                     }, 1000 * (currentRetries + 1)); // Exponential backoff
                 } else {
                     retryCount.delete(url);
                     reject(new Error(`Failed to load image after ${MAX_RETRIES} attempts`));
                 }
             };
+            
+            img.src = url;
         });
     }
 
@@ -184,21 +230,76 @@ document.addEventListener('DOMContentLoaded', function() {
         galleryView.classList.remove('hidden');
     }
 
-    // Global error handler for images
+    // Enhanced global error handler for images
     window.handleImageError = function(img) {
         console.error('Image load error:', img.src);
         const wrapper = img.parentElement;
         wrapper.classList.add('error');
         
-        // Try alternative URL format if not already using proxy
-        if (!img.dataset.retried && !img.src.includes('/.netlify/functions/proxy-media')) {
+        // Try alternative URL format if not already tried
+        if (!img.dataset.retried) {
             img.dataset.retried = 'true';
             const originalUrl = img.dataset.originalUrl;
+            
             if (originalUrl) {
-                console.log('Retrying with proxy URL:', originalUrl);
-                img.src = processUrl(originalUrl);
+                console.log('Retrying with alternate URL format');
+                
+                // Try direct Dropbox URL first
+                if (originalUrl.includes('dropbox.com') && !img.src.includes('raw=1')) {
+                    console.log('Trying direct Dropbox URL');
+                    img.src = getDirectDropboxUrl(originalUrl);
+                    return;
+                }
+                
+                // Fall back to proxy if not already using it
+                if (!img.src.includes('/.netlify/functions/proxy-media')) {
+                    console.log('Falling back to proxy URL');
+                    img.src = `/.netlify/functions/proxy-media?url=${encodeURIComponent(originalUrl)}&t=${Date.now()}`;
+                    return;
+                }
+                
+                // Add cache buster if all else failed
+                if (img.src.includes('/.netlify/functions/proxy-media')) {
+                    console.log('Adding cache buster to proxy URL');
+                    img.src = `${img.src}&cb=${Date.now()}`;
+                    return;
+                }
             }
         }
+        
+        // If all retries fail, show error placeholder
+        if (img.dataset.retried === 'true') {
+            wrapper.innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Failed to load image</p>
+                    <button class="btn btn-sm btn-outline-warning mt-2" onclick="retryImage(this, '${encodeURIComponent(img.dataset.originalUrl)}')">
+                        <i class="fas fa-redo"></i> Retry
+                    </button>
+                </div>
+            `;
+        }
+    };
+    
+    // Add global retry function
+    window.retryImage = function(button, encodedUrl) {
+        const url = decodeURIComponent(encodedUrl);
+        const wrapper = button.closest('.media-wrapper');
+        
+        // Reset wrapper to loading state
+        wrapper.classList.add('loading');
+        wrapper.classList.remove('error');
+        wrapper.innerHTML = `
+            <img src="${getDirectDropboxUrl(url)}" 
+                 alt="Retrying..." 
+                 loading="lazy"
+                 onload="this.parentElement.classList.remove('loading')"
+                 onerror="handleImageError(this)"
+                 data-original-url="${url}">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+            </div>
+        `;
     };
 
     // Enhanced modal opening with error handling
@@ -321,4 +422,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.getElementById('closeGalleryBtn').addEventListener('click', closeGallery);
-}); 
+});

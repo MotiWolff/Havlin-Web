@@ -32,71 +32,55 @@ exports.handler = async function(event, context) {
         };
     }
 
+    console.log('Original URL:', url);
+
     try {
-        // First try to get the direct download URL from Dropbox
+        // Simplify the Dropbox URL handling
         let processedUrl = url;
         
         if (url.includes('dropbox.com')) {
-            const urlObj = new URL(url);
-            let path = urlObj.pathname;
-            const params = new URLSearchParams(urlObj.search);
-            const rlkey = params.get('rlkey');
-
-            console.log('Processing Dropbox URL:', {
-                originalUrl: url,
-                path: path,
-                rlkey: rlkey
-            });
-
-            // Try to get the shared link first
-            try {
-                const sharedLinkResponse = await fetch(url, {
-                    method: 'HEAD',
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)'
-                    },
-                    redirect: 'follow'
-                });
-
-                if (sharedLinkResponse.ok) {
-                    processedUrl = sharedLinkResponse.url;
-                    console.log('Got shared link URL:', processedUrl);
-                }
-            } catch (error) {
-                console.log('Failed to get shared link, falling back to direct URL:', error.message);
+            // Replace dropbox.com with dl.dropboxusercontent.com and add raw=1
+            processedUrl = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+            
+            // Add raw=1 parameter if not already present
+            if (!processedUrl.includes('raw=1')) {
+                processedUrl += processedUrl.includes('?') ? '&raw=1' : '?raw=1';
             }
-
-            // If we still have the original URL, try to convert it
-            if (processedUrl === url) {
-                if (path.includes('/scl/fi/')) {
-                    const parts = path.split('/');
-                    const fileId = parts[parts.length - 2];
-                    const fileName = parts[parts.length - 1];
-                    path = `/${fileId}/${fileName}`;
-                }
-
-                processedUrl = `https://dl.dropboxusercontent.com${path}`;
+            
+            // If URL contains '/scl/fi/', handle the special format
+            if (processedUrl.includes('/scl/fi/')) {
+                // This converts new-style Dropbox links to dl links
+                const urlObj = new URL(url);
+                const pathParts = urlObj.pathname.split('/');
+                // Extract the file ID and name
+                const fileId = pathParts[pathParts.indexOf('scl') + 2];
+                const fileName = pathParts[pathParts.length - 1];
                 
-                const queryParams = [];
+                // Construct the raw content URL
+                processedUrl = `https://dl.dropboxusercontent.com/scl/fi/${fileId}/${fileName}?raw=1`;
+                
+                // Add rlkey if present in original URL
+                const params = new URLSearchParams(urlObj.search);
+                const rlkey = params.get('rlkey');
                 if (rlkey) {
-                    queryParams.push(`rlkey=${rlkey}`);
+                    processedUrl += `&rlkey=${rlkey}`;
                 }
-                queryParams.push('raw=1');
-                processedUrl += `?${queryParams.join('&')}`;
             }
-
-            console.log('Final processed URL:', processedUrl);
         }
 
-        // Fetch the media
+        console.log('Processed URL:', processedUrl);
+
+        // Fetch the media with expanded timeout and better error handling
         const response = await fetch(processedUrl, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
                 'Accept': '*/*',
                 'Accept-Encoding': 'gzip, deflate, br',
-                'Connection': 'keep-alive'
+                'Connection': 'keep-alive',
+                'Cache-Control': 'no-cache'
             },
-            redirect: 'follow'
+            redirect: 'follow',
+            timeout: 30000 // 30 second timeout
         });
 
         if (!response.ok) {
@@ -105,14 +89,16 @@ exports.handler = async function(event, context) {
                 status: response.status,
                 statusText: response.statusText,
                 url: processedUrl,
-                errorText: errorText,
+                errorText: errorText.substring(0, 500), // Limit error text size
                 headers: Object.fromEntries(response.headers.entries())
             });
-            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText.substring(0, 100)}`);
         }
 
-        const buffer = await response.buffer();
-        const contentType = response.headers.get('content-type');
+        // Get content as array buffer instead of buffer for better compatibility
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const contentType = response.headers.get('content-type') || 'application/octet-stream';
 
         console.log('Successfully fetched media:', {
             originalUrl: url,
@@ -125,7 +111,7 @@ exports.handler = async function(event, context) {
             statusCode: 200,
             headers: {
                 ...headers,
-                'Content-Type': contentType || 'application/octet-stream',
+                'Content-Type': contentType,
                 'Cache-Control': 'public, max-age=31536000',
                 'Content-Disposition': 'inline'
             },
@@ -141,7 +127,10 @@ exports.handler = async function(event, context) {
         
         return {
             statusCode: 500,
-            headers,
+            headers: {
+                ...headers,
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
                 error: 'Failed to fetch media',
                 details: error.message,

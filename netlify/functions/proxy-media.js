@@ -37,24 +37,42 @@ exports.handler = async function(event, context) {
         let processedUrl = url;
         
         if (url.includes('dropbox.com')) {
-            // Extract the file path and parameters
             const urlObj = new URL(url);
-            const path = urlObj.pathname;
+            let path = urlObj.pathname;
             const params = new URLSearchParams(urlObj.search);
             const rlkey = params.get('rlkey');
-            
-            // Remove /scl/fi/ from path if present
-            const cleanPath = path.replace('/scl/fi/', '/');
-            
+
+            // Log original URL components
+            console.log('Original URL components:', {
+                fullUrl: url,
+                path: path,
+                rlkey: rlkey
+            });
+
+            // Handle /scl/fi/ format
+            if (path.includes('/scl/fi/')) {
+                // Extract the file ID and name
+                const parts = path.split('/');
+                const fileId = parts[parts.length - 2];
+                const fileName = parts[parts.length - 1];
+                
+                // Construct the new path
+                path = `/${fileId}/${fileName}`;
+            }
+
             // Convert to dl.dropboxusercontent.com format
-            processedUrl = `https://dl.dropboxusercontent.com${cleanPath}`;
-            
-            // Add necessary parameters
+            processedUrl = `https://dl.dropboxusercontent.com${path}`;
+
+            // Add parameters
             const queryParams = [];
-            if (rlkey) queryParams.push(`rlkey=${rlkey}`);
+            if (rlkey) {
+                queryParams.push(`rlkey=${rlkey}`);
+            }
             queryParams.push('raw=1');
-            
             processedUrl += `?${queryParams.join('&')}`;
+
+            // Log processed URL
+            console.log('Processed URL:', processedUrl);
         }
 
         console.log('Attempting to fetch from URL:', processedUrl);
@@ -62,9 +80,17 @@ exports.handler = async function(event, context) {
         const response = await fetch(processedUrl, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)',
-                'Accept': '*/*'
+                'Accept': '*/*',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive'
             },
             redirect: 'follow'
+        });
+
+        // Log response headers for debugging
+        console.log('Response headers:', {
+            status: response.status,
+            headers: Object.fromEntries(response.headers.entries())
         });
 
         if (!response.ok) {
@@ -73,7 +99,8 @@ exports.handler = async function(event, context) {
                 status: response.status,
                 statusText: response.statusText,
                 url: processedUrl,
-                errorText: errorText
+                errorText: errorText,
+                headers: Object.fromEntries(response.headers.entries())
             });
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
@@ -85,7 +112,8 @@ exports.handler = async function(event, context) {
             originalUrl: url,
             processedUrl: processedUrl,
             contentType: contentType,
-            size: buffer.length
+            size: buffer.length,
+            responseHeaders: Object.fromEntries(response.headers.entries())
         });
 
         return {

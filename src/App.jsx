@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import About from './pages/About';
@@ -14,6 +14,14 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
+        {/* Backwards-compatible legacy HTML routes */}
+        <Route path="/index.html" element={<Navigate to="/" replace />} />
+        <Route path="/home.html" element={<Navigate to="/home" replace />} />
+        <Route path="/about.html" element={<Navigate to="/about" replace />} />
+        <Route path="/family.html" element={<Navigate to="/family" replace />} />
+        <Route path="/gallery.html" element={<Navigate to="/gallery" replace />} />
+        <Route path="/calendar.html" element={<Navigate to="/calendar" replace />} />
+        <Route path="/trivia.html" element={<Navigate to="/trivia" replace />} />
         <Route path="/home" element={
           <ProtectedRoute>
             <Home />

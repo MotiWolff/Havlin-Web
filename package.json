@@ -1,23 +1,37 @@
 {
   "name": "havlin-family",
-  "version": "1.0.0",
-  "main": "calendar-data.js",
+  "private": true,
+  "version": "1.0.2",
+  "type": "module",
+  "engines": {
+    "node": ">=18 <=22"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "concurrently -k -n VITE,FNS -c cyan,magenta \"vite\" \"npx --yes netlify-cli@latest functions:serve --port 9999 --functions netlify/functions\"",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MotiWolff/havlin-website.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/MotiWolff/havlin-website/issues"
-  },
-  "homepage": "https://github.com/MotiWolff/havlin-website#readme",
-  "description": "",
   "dependencies": {
-    "jsonwebtoken": "^9.0.2"
+    "@fortawesome/fontawesome-free": "^7.1.0",
+    "animate.css": "^4.1.1",
+    "bootstrap": "^5.3.8",
+    "jsonwebtoken": "^9.0.3",
+    "node-fetch": "^3.3.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.10.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "concurrently": "^9.2.1",
+    "vite": "^7.2.4"
   }
 }

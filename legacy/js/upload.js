@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const type = mediaUrl.toLowerCase().includes('.mp4') ? 'video' : 'image';
             
             // המרת הקישור לפורמט הנכון
-            const formattedUrl = processMediaUrl(mediaUrl);
+            const formattedUrl = mediaUrl.replace(/\?.*$/, '?dl=1');
             
             try {
                 const response = await fetch('/.netlify/functions/add-media', {
@@ -51,24 +51,4 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-});
-
-function processMediaUrl(url) {
-    // For Dropbox URLs
-    if (url.includes('dropbox.com')) {
-        // Remove any existing parameters
-        let cleanUrl = url.split('?')[0];
-        // Replace www.dropbox.com with dl.dropboxusercontent.com
-        cleanUrl = cleanUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
-        // Add raw=1 parameter
-        return cleanUrl + '?raw=1';
-    }
-    // For Google Drive URLs
-    else if (url.includes('drive.google.com')) {
-        const fileId = url.match(/[-\w]{25,}/);
-        if (fileId) {
-            return `https://drive.google.com/uc?export=view&id=${fileId[0]}`;
-        }
-    }
-    return url;
-} 
+}); 
